@@ -21,6 +21,7 @@ export interface IEmitOptions {
     newline?: string;
     emitTypes?: boolean;
     periodBeforeApplicationTypes?: boolean;
+    compact?: boolean;
 }
 
 export class EmitVisitor extends DoctrineVisitor<string> {
@@ -34,6 +35,7 @@ export class EmitVisitor extends DoctrineVisitor<string> {
             newline: "\n",
             emitTypes: true,
             periodBeforeApplicationTypes: false,
+            compact: false,
             ...options
         };
     }
@@ -114,7 +116,7 @@ export class EmitVisitor extends DoctrineVisitor<string> {
     protected visitArrayType(type: types.ArrayType): string {
         const sb = this.createStringBuilder();
         sb.append("[");
-        sb.append(type.elements.map(t => this.visitType(t)).join(", "));
+        sb.append(type.elements.map(t => this.visitType(t)).join(this.getDelimiter(",")));
         sb.append("]");
         return sb.toString();
     }
@@ -125,7 +127,7 @@ export class EmitVisitor extends DoctrineVisitor<string> {
         sb.append(type.key);
 
         if (type.value) {
-            sb.append(": ");
+            sb.append(this.getDelimiter(":"));
             sb.append(this.visitType(type.value));
         }
 
@@ -149,12 +151,12 @@ export class EmitVisitor extends DoctrineVisitor<string> {
 
         params.push(...type.params.map(p => this.visitType(p)));
 
-        sb.append(params.join(", "));
+        sb.append(params.join(this.getDelimiter(",")));
 
         sb.append(")");
 
         if (type.result) {
-            sb.append(": ");
+            sb.append(this.getDelimiter(":"));
 
             // TODO: Haven't seen how this can be an array yet, but the d.ts says it is?
             sb.append(this.visitType(type.result as any as Type));
@@ -195,7 +197,7 @@ export class EmitVisitor extends DoctrineVisitor<string> {
         }
 
         if (type.name && type.expression) {
-            sb.append(": ");
+            sb.append(this.getDelimiter(":"));
         }
 
         if (type.expression) {
@@ -209,7 +211,7 @@ export class EmitVisitor extends DoctrineVisitor<string> {
         const sb = this.createStringBuilder();
 
         sb.append("{");
-        sb.append(type.fields.map(f => this.visitType(f)).join(", "));
+        sb.append(type.fields.map(f => this.visitType(f)).join(this.getDelimiter(",")));
         sb.append("}");
 
         return sb.toString();
@@ -234,7 +236,7 @@ export class EmitVisitor extends DoctrineVisitor<string> {
             sb.append(".");
         }
         sb.append("<");
-        sb.append(type.applications.map(t => this.visitType(t)).join(", "));
+        sb.append(type.applications.map(t => this.visitType(t)).join(this.getDelimiter(",")));
         sb.append(">");
 
         return sb.toString();
@@ -260,7 +262,8 @@ export class EmitVisitor extends DoctrineVisitor<string> {
         const sb = this.createStringBuilder();
 
         sb.append("(");
-        sb.append(type.elements.map(t => this.visitType(t)).join(type.type === Syntax.UnionType ? "|" : "&"));
+        sb.append(type.elements.map(t => this.visitType(t)).
+            join(this.getDelimiter(type.type === Syntax.UnionType ? "|" : "&", true)));
         sb.append(")");
 
         return sb.toString();
@@ -268,5 +271,21 @@ export class EmitVisitor extends DoctrineVisitor<string> {
 
     private createStringBuilder() {
         return new StringBuilder(this._options.newline);
+    }
+
+    private getDelimiter(delimeter: string, twoSided = false) {
+        const sb = this.createStringBuilder();
+
+        if (twoSided && !this._options.compact) {
+            sb.append(" ");
+        }
+
+        sb.append(delimeter);
+
+        if (!this._options.compact) {
+            sb.append(" ");
+        }
+
+        return sb.toString();
     }
 }
