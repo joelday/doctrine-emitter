@@ -5,83 +5,72 @@ import Tag = doctrine.Tag;
 import Type = doctrine.Type;
 import types = doctrine.type;
 
-export abstract class DoctrineVisitor {
-    abstract visit(annotation: Annotation);
-    abstract visitTag(tag: Tag): void;
+export interface IntersectionType { type: "IntersectionType"; elements: Type[]; }
+export type ExtendedType = Type | IntersectionType;
 
-    visitType(type: Type): void {
+export abstract class DoctrineVisitor<TOutput> {
+    abstract visit(annotation: Annotation): string;
+    abstract visitTag(tag: Tag): string;
+
+    visitType(type: ExtendedType): TOutput {
         switch (type.type) {
             case Syntax.AllLiteral:
-                this.visitAllLiteral(type);
-                break;
+                return this.visitAllLiteral(type);
             case Syntax.ArrayType:
-                this.visitArrayType(type);
-                break;
+                return this.visitArrayType(type);
             case Syntax.FieldType:
-                this.visitFieldType(type);
-                break;
+                return this.visitFieldType(type);
             case Syntax.FunctionType:
-                this.visitFunctionType(type);
-                break;
+                return this.visitFunctionType(type);
             case Syntax.NameExpression:
-                this.visitNameExpression(type);
-                break;
+                return this.visitNameExpression(type);
             case Syntax.NonNullableType:
-                this.visitNonNullableType(type);
-                break;
+                return this.visitNonNullableType(type);
             case Syntax.NullableLiteral:
-                this.visitNullableLiteral(type);
-                break;
+                return this.visitNullableLiteral(type);
             case Syntax.NullableType:
-                this.visitNullableType(type);
-                break;
+                return this.visitNullableType(type);
             case Syntax.NullLiteral:
-                this.visitNullLiteral(type);
-                break;
+                return this.visitNullLiteral(type);
             case Syntax.OptionalType:
-                this.visitOptionalType(type);
-                break;
+                return this.visitOptionalType(type);
             case Syntax.ParameterType:
-                this.visitParameterType(type);
-                break;
+                return this.visitParameterType(type);
             case Syntax.RecordType:
-                this.visitRecordType(type);
-                break;
+                return this.visitRecordType(type);
             case Syntax.RestType:
-                this.visitRestType(type);
-                break;
+                return this.visitRestType(type);
             case Syntax.TypeApplication:
-                this.visitTypeApplication(type);
-                break;
+                return this.visitTypeApplication(type);
             case Syntax.UndefinedLiteral:
-                this.visitUndefinedLiteral(type);
-                break;
+                return this.visitUndefinedLiteral(type);
             case Syntax.UnionType:
-                this.visitUnionType(type);
-                break;
+                return this.visitUnionType(type);
             case Syntax.VoidLiteral:
-                this.visitVoidLiteral(type);
-                break;
+                return this.visitVoidLiteral(type);
+            case "IntersectionType":
+                return this.visitIntersectionType(type);
             default:
                 throw new Error("Attempted to visit an unknown Doctrine type.");
         }
     }
 
-    protected abstract visitAllLiteral(type: types.AllLiteral): void;
-    protected abstract visitArrayType(type: types.ArrayType): void;
-    protected abstract visitFieldType(type: types.FieldType): void;
-    protected abstract visitFunctionType(type: types.FunctionType): void;
-    protected abstract visitNameExpression(type: types.NameExpression): void;
-    protected abstract visitNonNullableType(type: types.NonNullableType): void;
-    protected abstract visitNullableLiteral(type: types.NullableLiteral): void;
-    protected abstract visitNullableType(type: types.NullableType): void;
-    protected abstract visitNullLiteral(type: types.NullLiteral): void;
-    protected abstract visitOptionalType(type: types.OptionalType): void;
-    protected abstract visitParameterType(type: types.ParameterType): void;
-    protected abstract visitRecordType(type: types.RecordType): void;
-    protected abstract visitRestType(type: types.RestType): void;
-    protected abstract visitTypeApplication(type: types.TypeApplication): void;
-    protected abstract visitUndefinedLiteral(type: types.UndefinedLiteral): void;
-    protected abstract visitUnionType(type: types.UnionType): void;
-    protected abstract visitVoidLiteral(type: types.VoidLiteral): void;
+    protected abstract visitAllLiteral(type: types.AllLiteral): TOutput;
+    protected abstract visitArrayType(type: types.ArrayType): TOutput;
+    protected abstract visitFieldType(type: types.FieldType): TOutput;
+    protected abstract visitFunctionType(type: types.FunctionType): TOutput;
+    protected abstract visitIntersectionType(type: IntersectionType): TOutput;
+    protected abstract visitNameExpression(type: types.NameExpression): TOutput;
+    protected abstract visitNonNullableType(type: types.NonNullableType): TOutput;
+    protected abstract visitNullableLiteral(type: types.NullableLiteral): TOutput;
+    protected abstract visitNullableType(type: types.NullableType): TOutput;
+    protected abstract visitNullLiteral(type: types.NullLiteral): TOutput;
+    protected abstract visitOptionalType(type: types.OptionalType): TOutput;
+    protected abstract visitParameterType(type: types.ParameterType): TOutput;
+    protected abstract visitRecordType(type: types.RecordType): TOutput;
+    protected abstract visitRestType(type: types.RestType): TOutput;
+    protected abstract visitTypeApplication(type: types.TypeApplication): TOutput;
+    protected abstract visitUndefinedLiteral(type: types.UndefinedLiteral): TOutput;
+    protected abstract visitUnionType(type: types.UnionType): TOutput;
+    protected abstract visitVoidLiteral(type: types.VoidLiteral): TOutput;
 }

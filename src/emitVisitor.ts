@@ -6,159 +6,234 @@ import Type = doctrine.Type;
 import types = doctrine.type;
 
 import { StringBuilder } from "./utils";
-import { DoctrineVisitor } from "./visitor";
+import { DoctrineVisitor, ExtendedType, IntersectionType } from "./visitor";
 
-export function emit(annotation: Annotation, options: IEmitOptions = {}) {
-    options = {
-        useClosureCompilerSyntax: false,
-        newline: "\r\n",
-        ...options
-    };
+export function emitAnnotation(annotation: Annotation, options?: IEmitOptions) {
+    return new EmitVisitor(options || {}).visit(annotation);
+}
 
-    const sb = new StringBuilder(options.newline);
-    const visitor = new EmitVisitor(sb, options.useClosureCompilerSyntax);
-
-    visitor.visit(annotation);
-
-    return sb.toString();
+export function emitTag(tag: Tag, options?: IEmitOptions) {
+    return new EmitVisitor(options || {}).visitTag(tag);
 }
 
 export interface IEmitOptions {
-    useClosureCompilerSyntax?: boolean;
+    closureCompilerOptionals?: boolean;
     newline?: string;
+    emitTypes?: boolean;
+    periodBeforeApplicationTypes?: boolean;
 }
 
-export class EmitVisitor extends DoctrineVisitor {
-    private readonly _sb: StringBuilder;
-    private readonly _useClosureCompilerSyntax: boolean;
+export class EmitVisitor extends DoctrineVisitor<string> {
+    private readonly _options: IEmitOptions;
 
-    constructor(sb: StringBuilder, useClosureCompilerSyntax: boolean) {
+    constructor(options: IEmitOptions) {
         super();
-        this._sb = sb;
-        this._useClosureCompilerSyntax = useClosureCompilerSyntax;
+
+        this._options = {
+            closureCompilerOptionals: false,
+            newline: "\n",
+            emitTypes: true,
+            periodBeforeApplicationTypes: false,
+            ...options
+        };
     }
 
-    visit(annotation: Annotation): void {
+    visit(annotation: Annotation): string {
+        const sb = this.createStringBuilder();
+
         if (annotation.description) {
-            this._sb.append(annotation.description);
+            sb.append(annotation.description);
         }
 
         if (annotation.tags) {
-            annotation.tags.forEach(t => {
-                this.visitTag(t);
-                this._sb.appendLine();
-            });
+            sb.append(annotation.tags.map(t => this.visitTag(t)).join(this._options.newline));
         }
+
+        return sb.toString();
     }
 
-    visitTag(tag: Tag): void {
-        this._sb.append("@");
-        this._sb.append(tag.title);
+    visitTag(tag: Tag): string {
+        const sb = this.createStringBuilder();
 
-        const optional = tag.type && tag.type.type === Syntax.OptionalType;
+        sb.append("@");
+        sb.append(tag.title);
 
-        if (tag.type) {
-            this._sb.append(" ");
-            this._sb.append("{");
+        const asOptional = !!tag.type && tag.type.type === Syntax.OptionalType ? tag.type as types.OptionalType : null;
 
-            if (this._useClosureCompilerSyntax && optional) {
-                this._sb.append("=");
+        if (tag.type && this._options.emitTypes) {
+            sb.append(" ");
+            sb.append("{");
+
+            // If this is an optional, but that is being represented as [argName], then skip past it.
+            if (asOptional && !this._options.closureCompilerOptionals) {
+                sb.append(this.visitType(asOptional.expression));
+            }
+            else {
+                sb.append(this.visitType(tag.type));
             }
 
-            this._sb.append("}");
+            if (asOptional && this._options.closureCompilerOptionals) {
+                sb.append("=");
+            }
+
+            sb.append("}");
         }
 
         if (tag.name) {
-            this._sb.append(" ");
+            sb.append(" ");
 
-            if (optional && !this._useClosureCompilerSyntax) {
-                this._sb.append("[");
+            if (asOptional && !this._options.closureCompilerOptionals) {
+                sb.append("[");
             }
 
-            this._sb.append(tag.name);
+            sb.append(tag.name);
 
             const defaultValue: string = (tag as any).default;
-            if (defaultValue && !this._useClosureCompilerSyntax) {
-                this._sb.append("=");
-                this._sb.append(defaultValue);
+            if (defaultValue && !this._options.closureCompilerOptionals) {
+                sb.append("=");
+                sb.append(defaultValue);
             }
 
-            if (optional && !this._useClosureCompilerSyntax) {
-                this._sb.append("]");
+            if (asOptional && !this._options.closureCompilerOptionals) {
+                sb.append("]");
             }
         }
 
         if (tag.description) {
-            this._sb.append(" ");
-            this._sb.append(tag.description);
+            sb.append(" ");
+            sb.append(tag.description);
         }
+
+        return sb.toString();
     }
 
-    protected visitAllLiteral(type: types.AllLiteral): void {
-        return;
+    protected visitAllLiteral(type: types.AllLiteral): string {
+        return "*";
     }
 
-    protected visitArrayType(type: types.ArrayType): void {
-        return;
+    protected visitArrayType(type: types.ArrayType): string {
+        return "--ARRAY_TYPE_NOT_IMPLEMENTED--";
     }
 
-    protected visitFieldType(type: types.FieldType): void {
-        return;
+    protected visitFieldType(type: types.FieldType): string {
+        return "--FIELD_TYPE_NOT_IMPLEMENTED--";
     }
 
-    protected visitFunctionType(type: types.FunctionType): void {
-        return;
+    protected visitFunctionType(type: types.FunctionType): string {
+        const sb = this.createStringBuilder();
+
+        sb.append("function(");
+
+        const params: string[] = [];
+
+        if (type.this) {
+            params.push("this:" + this.visitType(type.this));
+        }
+
+        if (type.new) {
+            params.push("new:" + this.visitType(type.new));
+        }
+
+        params.push(...type.params.map(p => this.visitType(p)));
+
+        sb.append(params.join(", "));
+
+        sb.append(")");
+
+        if (type.result) {
+            sb.append(": ");
+
+            // TODO: Haven't seen how this can be an array yet, but the d.ts says it is?
+            sb.append(this.visitType(type.result as any as Type));
+        }
+
+        return sb.toString();
     }
 
-    protected visitNameExpression(type: types.NameExpression): void {
-        return;
+    protected visitNameExpression(type: types.NameExpression): string {
+        return type.name;
     }
 
-    protected visitNonNullableType(type: types.NonNullableType): void {
-        return;
+    protected visitNonNullableType(type: types.NonNullableType): string {
+        return (type.prefix ? "!" : "") + this.visitType(type.expression);
     }
 
-    protected visitNullableLiteral(type: types.NullableLiteral): void {
-        return;
+    protected visitNullableLiteral(type: types.NullableLiteral): string {
+        return "?";
     }
 
-    protected visitNullableType(type: types.NullableType): void {
-        return;
+    protected visitNullableType(type: types.NullableType): string {
+        return (type.prefix ? "?" : "") + this.visitType(type.expression);
     }
 
-    protected visitNullLiteral(type: types.NullLiteral): void {
-        return;
+    protected visitNullLiteral(type: types.NullLiteral): string {
+        return "null";
     }
 
-    protected visitOptionalType(type: types.OptionalType): void {
-        return;
+    protected visitOptionalType(type: types.OptionalType): string {
+        return this.visitType(type.expression) + "=";
     }
 
-    protected visitParameterType(type: types.ParameterType): void {
-        return;
+    protected visitParameterType(type: types.ParameterType): string {
+        return "--PARAMETER_TYPE_NOT_IMPLEMENTED--";
     }
 
-    protected visitRecordType(type: types.RecordType): void {
-        return;
+    protected visitRecordType(type: types.RecordType): string {
+        return "--RECORD_TYPE_NOT_IMPLEMENTED--";
     }
 
-    protected visitRestType(type: types.RestType): void {
-        return;
+    protected visitRestType(type: types.RestType): string {
+        const sb = this.createStringBuilder();
+        sb.append("...");
+
+        if (type.expression) {
+            sb.append(this.visitType(type.expression));
+        }
+
+        return sb.toString();
     }
 
-    protected visitTypeApplication(type: types.TypeApplication): void {
-        return;
+    protected visitTypeApplication(type: types.TypeApplication): string {
+        const sb = this.createStringBuilder();
+
+        sb.append(this.visitType(type.expression));
+        if (this._options.periodBeforeApplicationTypes) {
+            sb.append(".");
+        }
+        sb.append("<");
+        sb.append(type.applications.map(t => this.visitType(t)).join(", "));
+        sb.append(">");
+
+        return sb.toString();
     }
 
-    protected visitUndefinedLiteral(type: types.UndefinedLiteral): void {
-        return;
+    protected visitUndefinedLiteral(type: types.UndefinedLiteral): string {
+        return "undefined";
     }
 
-    protected visitUnionType(type: types.UnionType): void {
-        return;
+    protected visitUnionType(type: types.UnionType): string {
+        return this.emitUnionOrIntersection(type);
     }
 
-    protected visitVoidLiteral(type: types.VoidLiteral): void {
-        return;
+    protected visitIntersectionType(type: IntersectionType): string {
+        return this.emitUnionOrIntersection(type);
+    }
+
+    protected visitVoidLiteral(type: types.VoidLiteral): string {
+        return "void";
+    }
+
+    private emitUnionOrIntersection(type: types.UnionType | IntersectionType) {
+        const sb = this.createStringBuilder();
+
+        sb.append("(");
+        sb.append(type.elements.map(t => this.visitType(t)).join(type.type === Syntax.UnionType ? "|" : "&"));
+        sb.append(")");
+
+        return sb.toString();
+    }
+
+    private createStringBuilder() {
+        return new StringBuilder(this._options.newline);
     }
 }

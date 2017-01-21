@@ -1,1 +1,2 @@
-export { emit as default } from "./emitVisitor";
+export * from "./emitVisitor";
+export * from "./visitor";
