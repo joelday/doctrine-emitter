@@ -1,0 +1,46 @@
+{
+    "extends": "tslint:recommended",
+    "rules": {
+        "no-console": [
+            true
+        ],
+        "prefer-const": true,
+        "max-line-length": [
+            true,
+            120
+        ],
+        "no-reference": false,
+        "whitespace": [
+            false,
+            "check-typecast"
+        ],
+        "trailing-comma": [
+            true,
+            {
+                "multiline": "never"
+            }
+        ],
+        "no-debugger": false,
+        "member-access": [
+            false
+        ],
+        "variable-name": [
+            true,
+            "allow-leading-underscore",
+            "check-format",
+            "allow-pascal-case"
+        ],
+        "no-empty": false,
+        "no-var-keyword": true,
+        "no-consecutive-blank-lines": [
+            true
+        ],
+        "object-literal-sort-keys": false,
+        "one-line": [
+            false
+        ],
+        "eofline": false,
+        "no-bitwise": false,
+        "arrow-parens": false
+    }
+}

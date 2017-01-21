@@ -1,0 +1,26 @@
+{
+  "name": "doctrine-emitter",
+  "version": "1.0.0",
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "repository": "https://github.com/joelday/doctrine-emitter",
+  "author": "Joel Day <joelday@gmail.com>",
+  "license": "MIT",
+  "files": [
+    "lib"
+  ],
+  "devDependencies": {
+    "@types/doctrine": "^0.0.3",
+    "@types/jest": "^16.0.4",
+    "doctrine": "^2.0.0",
+    "jest": "^18.1.0",
+    "tslint": "^4.3.1",
+    "typescript": "^2.1.5"
+  },
+  "scripts": {
+    "prepublish": "yarn run lint && yarn run test",
+    "build": "tsc -p tsconfig.json",
+    "lint": "tslint ./src/**/*.ts",
+    "test": "yarn run build && jest"
+  }
+}
