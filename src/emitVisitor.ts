@@ -112,11 +112,24 @@ export class EmitVisitor extends DoctrineVisitor<string> {
     }
 
     protected visitArrayType(type: types.ArrayType): string {
-        return "--ARRAY_TYPE_NOT_IMPLEMENTED--";
+        const sb = this.createStringBuilder();
+        sb.append("[");
+        sb.append(type.elements.map(t => this.visitType(t)).join(", "));
+        sb.append("]");
+        return sb.toString();
     }
 
     protected visitFieldType(type: types.FieldType): string {
-        return "--FIELD_TYPE_NOT_IMPLEMENTED--";
+        const sb = this.createStringBuilder();
+
+        sb.append(type.key);
+
+        if (type.value) {
+            sb.append(": ");
+            sb.append(this.visitType(type.value));
+        }
+
+        return sb.toString();
     }
 
     protected visitFunctionType(type: types.FunctionType): string {
@@ -175,11 +188,31 @@ export class EmitVisitor extends DoctrineVisitor<string> {
     }
 
     protected visitParameterType(type: types.ParameterType): string {
-        return "--PARAMETER_TYPE_NOT_IMPLEMENTED--";
+        const sb = this.createStringBuilder();
+
+        if (type.name) {
+            sb.append(type.name);
+        }
+
+        if (type.name && type.expression) {
+            sb.append(": ");
+        }
+
+        if (type.expression) {
+            sb.append(this.visitType(type.expression));
+        }
+
+        return sb.toString();
     }
 
     protected visitRecordType(type: types.RecordType): string {
-        return "--RECORD_TYPE_NOT_IMPLEMENTED--";
+        const sb = this.createStringBuilder();
+
+        sb.append("{");
+        sb.append(type.fields.map(f => this.visitType(f)).join(", "));
+        sb.append("}");
+
+        return sb.toString();
     }
 
     protected visitRestType(type: types.RestType): string {
