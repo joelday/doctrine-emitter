@@ -6,7 +6,7 @@ import Type = doctrine.Type;
 import types = doctrine.type;
 
 import { StringBuilder } from "./utils";
-import { DoctrineVisitor, ExtendedType, IntersectionType } from "./visitor";
+import { DoctrineVisitor } from "./visitor";
 
 export function emitAnnotation(annotation: Annotation, options?: IEmitOptions) {
     return new EmitVisitor(options || {}).visit(annotation);
@@ -247,26 +247,18 @@ export class EmitVisitor extends DoctrineVisitor<string> {
     }
 
     protected visitUnionType(type: types.UnionType): string {
-        return this.emitUnionOrIntersection(type);
-    }
-
-    protected visitIntersectionType(type: IntersectionType): string {
-        return this.emitUnionOrIntersection(type);
-    }
-
-    protected visitVoidLiteral(type: types.VoidLiteral): string {
-        return "void";
-    }
-
-    private emitUnionOrIntersection(type: types.UnionType | IntersectionType) {
         const sb = this.createStringBuilder();
 
         sb.append("(");
         sb.append(type.elements.map(t => this.visitType(t)).
-            join(this.getDelimiter(type.type === Syntax.UnionType ? "|" : "&", true)));
+            join(this.getDelimiter("|", true)));
         sb.append(")");
 
         return sb.toString();
+    }
+
+    protected visitVoidLiteral(type: types.VoidLiteral): string {
+        return "void";
     }
 
     private createStringBuilder() {
