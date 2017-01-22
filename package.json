@@ -1,6 +1,6 @@
 {
   "name": "doctrine-emitter",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "repository": "https://github.com/joelday/doctrine-emitter",
@@ -11,19 +11,19 @@
     "lib"
   ],
   "devDependencies": {
-    "@types/doctrine": "^0.0.3",
     "@types/jest": "^16.0.4",
+    "del-cli": "^0.2.1",
     "jest": "^18.1.0",
     "tslint": "^4.3.1",
     "typescript": "^2.1.5"
   },
-  "peerDependencies": {
-    "doctrine": "^2.0.0"
+  "dependencies": {
+    "doctrine": "git+https://github.com/joelday/doctrine.git#dts-with-intersections"
   },
   "scripts": {
     "prepublish": "yarn run lint && yarn run test",
     "build": "tsc -p tsconfig.json",
     "lint": "tslint ./src/**/*.ts",
-    "test": "yarn run build && jest"
+    "test": "yarn run build && jest && del lib/__tests__"
   }
 }

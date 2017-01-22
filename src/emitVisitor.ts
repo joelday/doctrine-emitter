@@ -22,6 +22,7 @@ export interface IEmitOptions {
     emitTypes?: boolean;
     periodBeforeApplicationTypes?: boolean;
     compact?: boolean;
+    useTypeLiteralArrays?: boolean;
 }
 
 export class EmitVisitor extends DoctrineVisitor<string> {
@@ -36,6 +37,7 @@ export class EmitVisitor extends DoctrineVisitor<string> {
             emitTypes: true,
             periodBeforeApplicationTypes: false,
             compact: false,
+            useTypeLiteralArrays: true,
             ...options
         };
     }
@@ -231,13 +233,23 @@ export class EmitVisitor extends DoctrineVisitor<string> {
     protected visitTypeApplication(type: types.TypeApplication): string {
         const sb = this.createStringBuilder();
 
-        sb.append(this.visitType(type.expression));
-        if (this._options.periodBeforeApplicationTypes) {
-            sb.append(".");
+        if (this._options.useTypeLiteralArrays &&
+            type.expression.type === Syntax.NameExpression &&
+            type.expression.name.toLowerCase() === "array" &&
+            type.applications.length === 1) {
+
+            sb.append(this.visitType(type.applications[0]));
+            sb.append("[]");
         }
-        sb.append("<");
-        sb.append(type.applications.map(t => this.visitType(t)).join(this.getDelimiter(",")));
-        sb.append(">");
+        else {
+            sb.append(this.visitType(type.expression));
+            if (this._options.periodBeforeApplicationTypes) {
+                sb.append(".");
+            }
+            sb.append("<");
+            sb.append(type.applications.map(t => this.visitType(t)).join(this.getDelimiter(",")));
+            sb.append(">");
+        }
 
         return sb.toString();
     }
@@ -247,32 +259,40 @@ export class EmitVisitor extends DoctrineVisitor<string> {
     }
 
     protected visitUnionType(type: types.UnionType): string {
-        const sb = this.createStringBuilder();
+        return this.visitUnionOrIntersectionType(type, "|");
+    }
 
-        sb.append("(");
-        sb.append(type.elements.map(t => this.visitType(t)).
-            join(this.getDelimiter("|", true)));
-        sb.append(")");
-
-        return sb.toString();
+    protected visitIntersectionType(type: types.IntersectionType): string {
+        return this.visitUnionOrIntersectionType(type, "&");
     }
 
     protected visitVoidLiteral(type: types.VoidLiteral): string {
         return "void";
     }
 
+    private visitUnionOrIntersectionType(type: types.UnionType | types.IntersectionType, delimiter: string) {
+        const sb = this.createStringBuilder();
+
+        sb.append("(");
+        sb.append(type.elements.map(t => this.visitType(t)).
+            join(this.getDelimiter(delimiter, true)));
+        sb.append(")");
+
+        return sb.toString();
+    }
+
     private createStringBuilder() {
         return new StringBuilder(this._options.newline);
     }
 
-    private getDelimiter(delimeter: string, twoSided = false) {
+    private getDelimiter(delimiter: string, twoSided = false) {
         const sb = this.createStringBuilder();
 
         if (twoSided && !this._options.compact) {
             sb.append(" ");
         }
 
-        sb.append(delimeter);
+        sb.append(delimiter);
 
         if (!this._options.compact) {
             sb.append(" ");

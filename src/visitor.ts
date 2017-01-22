@@ -43,6 +43,8 @@ export abstract class DoctrineVisitor<TOutput> {
                 return this.visitUndefinedLiteral(type);
             case Syntax.UnionType:
                 return this.visitUnionType(type);
+            case Syntax.IntersectionType:
+                return this.visitIntersectionType(type);
             case Syntax.VoidLiteral:
                 return this.visitVoidLiteral(type);
             default:
@@ -54,6 +56,7 @@ export abstract class DoctrineVisitor<TOutput> {
     protected abstract visitArrayType(type: types.ArrayType): TOutput;
     protected abstract visitFieldType(type: types.FieldType): TOutput;
     protected abstract visitFunctionType(type: types.FunctionType): TOutput;
+    protected abstract visitIntersectionType(type: types.IntersectionType): TOutput;
     protected abstract visitNameExpression(type: types.NameExpression): TOutput;
     protected abstract visitNonNullableType(type: types.NonNullableType): TOutput;
     protected abstract visitNullableLiteral(type: types.NullableLiteral): TOutput;
