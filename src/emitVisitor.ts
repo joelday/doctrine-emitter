@@ -65,9 +65,7 @@ export class EmitVisitor extends DoctrineVisitor<string> {
         const asOptional = !!tag.type && typeof tag.type !== "string" &&
             tag.type.type === Syntax.OptionalType ? tag.type as types.OptionalType : null;
 
-        const isOptional = !!asOptional || !!(tag as any).default;
-
-        if (tag.type && this._options.emitTypes) {
+        if (tag.type && tag.type.type && this._options.emitTypes) {
             sb.append(" ");
             sb.append("{");
 
@@ -89,7 +87,7 @@ export class EmitVisitor extends DoctrineVisitor<string> {
         if (tag.name) {
             sb.append(" ");
 
-            if (isOptional && !this._options.closureCompilerOptionals) {
+            if (asOptional && !this._options.closureCompilerOptionals) {
                 sb.append("[");
             }
 
@@ -101,7 +99,7 @@ export class EmitVisitor extends DoctrineVisitor<string> {
                 sb.append(defaultValue);
             }
 
-            if (isOptional && !this._options.closureCompilerOptionals) {
+            if (asOptional && !this._options.closureCompilerOptionals) {
                 sb.append("]");
             }
         }
@@ -241,6 +239,8 @@ export class EmitVisitor extends DoctrineVisitor<string> {
         const sb = this.createStringBuilder();
 
         if (this._options.useTypeLiteralArrays &&
+            type.expression &&
+            typeof type.expression !== "string" &&
             type.expression.type === Syntax.NameExpression &&
             type.expression.name.toLowerCase() === "array" &&
             type.applications.length === 1) {

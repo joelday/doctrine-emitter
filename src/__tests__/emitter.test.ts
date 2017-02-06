@@ -13,6 +13,7 @@ test("Emit matches input", () => {
         preserveWhitespace: true,
         sloppy: true,
         lineNumbers: true,
+        trackIndexes: true,
         recoverable: true,
         skipTypeContent: true
     });
