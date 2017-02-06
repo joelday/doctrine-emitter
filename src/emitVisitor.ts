@@ -62,7 +62,10 @@ export class EmitVisitor extends DoctrineVisitor<string> {
         sb.append("@");
         sb.append(tag.title);
 
-        const asOptional = !!tag.type && tag.type.type === Syntax.OptionalType ? tag.type as types.OptionalType : null;
+        const asOptional = !!tag.type && typeof tag.type !== "string" &&
+            tag.type.type === Syntax.OptionalType ? tag.type as types.OptionalType : null;
+
+        const isOptional = !!asOptional || !!(tag as any).default;
 
         if (tag.type && this._options.emitTypes) {
             sb.append(" ");
@@ -71,13 +74,13 @@ export class EmitVisitor extends DoctrineVisitor<string> {
             // If this is an optional, but that is being represented as [argName], then skip past it.
             if (asOptional && !this._options.closureCompilerOptionals) {
                 sb.append(this.visitType(asOptional.expression));
+
+                if (asOptional && this._options.closureCompilerOptionals) {
+                    sb.append("=");
+                }
             }
             else {
                 sb.append(this.visitType(tag.type));
-            }
-
-            if (asOptional && this._options.closureCompilerOptionals) {
-                sb.append("=");
             }
 
             sb.append("}");
@@ -86,7 +89,7 @@ export class EmitVisitor extends DoctrineVisitor<string> {
         if (tag.name) {
             sb.append(" ");
 
-            if (asOptional && !this._options.closureCompilerOptionals) {
+            if (isOptional && !this._options.closureCompilerOptionals) {
                 sb.append("[");
             }
 
@@ -98,7 +101,7 @@ export class EmitVisitor extends DoctrineVisitor<string> {
                 sb.append(defaultValue);
             }
 
-            if (asOptional && !this._options.closureCompilerOptionals) {
+            if (isOptional && !this._options.closureCompilerOptionals) {
                 sb.append("]");
             }
         }
@@ -113,6 +116,10 @@ export class EmitVisitor extends DoctrineVisitor<string> {
 
     protected visitAllLiteral(type: types.AllLiteral): string {
         return "*";
+    }
+
+    protected visitRawType(type: string) {
+        return type;
     }
 
     protected visitArrayType(type: types.ArrayType): string {

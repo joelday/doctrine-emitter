@@ -9,7 +9,11 @@ export abstract class DoctrineVisitor<TOutput> {
     abstract visit(annotation: Annotation): string;
     abstract visitTag(tag: Tag): string;
 
-    visitType(type: Type): TOutput {
+    visitType(type: Type | string): TOutput {
+        if (typeof type === "string") {
+            return this.visitRawType(type);
+        }
+
         switch (type.type) {
             case Syntax.AllLiteral:
                 return this.visitAllLiteral(type);
@@ -52,6 +56,7 @@ export abstract class DoctrineVisitor<TOutput> {
         }
     }
 
+    protected abstract visitRawType(type: string): TOutput;
     protected abstract visitAllLiteral(type: types.AllLiteral): TOutput;
     protected abstract visitArrayType(type: types.ArrayType): TOutput;
     protected abstract visitFieldType(type: types.FieldType): TOutput;

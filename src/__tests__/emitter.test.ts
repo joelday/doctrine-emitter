@@ -13,7 +13,8 @@ test("Emit matches input", () => {
         preserveWhitespace: true,
         sloppy: true,
         lineNumbers: true,
-        recoverable: true
+        recoverable: true,
+        skipTypeContent: true
     });
 
     const emitted = emit.emitAnnotation(parsed);
