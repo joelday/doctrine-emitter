@@ -84,6 +84,11 @@ export class EmitVisitor extends DoctrineVisitor<string> {
             sb.append("}");
         }
 
+        if ((<any>tag).access) {
+            sb.append(" ");
+            sb.append((<any>tag).access);
+        }
+
         if (tag.name) {
             sb.append(" ");
 
